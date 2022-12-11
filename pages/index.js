@@ -1,44 +1,28 @@
-import Container from '../components/container'
-import MoreStories from '../components/more-stories'
-import HeroPost from '../components/hero-post'
-import Intro from '../components/intro'
-import Layout from '../components/layout'
-import { getAllPostsForHome } from '../lib/preprio'
-import Head from 'next/head'
-import { CMS_NAME } from '../lib/constants'
+import Link from "next/link";
+import { GetPosts } from "../queries/preprQueries";
+import { prepr } from "../services/prepr";
 
-export default function Index({ posts, preview }) {
-  const heroPost = posts[0]
-  const morePosts = posts.slice(1)
-  return (
-    <>
-      <Layout preview={preview}>
-        <Head>
-          <title>Next.js Blog Example with {CMS_NAME}</title>
-        </Head>
-        <Container>
-          <Intro />
-          {heroPost && (
-            <HeroPost
-              title={heroPost.title}
-              coverImage={heroPost.cover[0].cdn_files[0].url}
-              date={heroPost.date}
-              author={heroPost.author[0]}
-              slug={heroPost._slug}
-              excerpt={heroPost.summary}
-            />
-          )}
-          {morePosts.length > 0 && <MoreStories posts={morePosts} />}
-        </Container>
-      </Layout>
-    </>
-  )
+function Home({ posts }) {
+ return (
+   <ul>
+     {posts.map((post) => (
+       <li key={post._id}>
+         <Link href={`/post/${post._slug}`}>{post.title}</Link>
+       </li>
+     ))}
+   </ul>
+ );
 }
 
-export async function getStaticProps({ preview = false }) {
-  const posts = (await getAllPostsForHome(preview)) || []
+export default Home;
 
-  return {
-    props: { posts, preview },
-  }
+export async function getStaticProps(context) {
+ // Running GetPosts query using prepr client
+ const postsData = await prepr.graphqlQuery(GetPosts).fetch();
+ const posts = postsData.data.posts.items;
+
+ // Passing posts as props
+ return {
+   props: { posts },
+ };
 }
